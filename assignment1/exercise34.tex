@@ -1,0 +1,16 @@
+%Exercise 3.4 content
+\subsection{}
+ 
+Minimize $\sum_{f \in F, g \in F} z_{fg}$.
+ 
+\begin{align*}
+ \sum_{v \in V} x_{vf} + \sum_{g \in F} z_{fg} - z_{gf}\quad =& \quad \begin{cases} -4 & f~\text{is external} \\ 4 & \text{otherwise}\end{cases} \\
+ \sum_f x_{vf} \quad =& \quad \begin{cases}
+                                0 & \text{if}~v~\text{has degree 2} \\
+                                2 & \text{if}~v~\text{has degree 3} \\
+                                4 & \text{if}~v~\text{has degree 4} \\
+                              \end{cases} \\
+ z_{fg} \quad \geq& \quad 0 ~~\text{for all}~f,g \in F
+\end{align*}
+ 
+where $F$ is the set of faces in the graph.

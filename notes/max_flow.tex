@@ -1,0 +1,48 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+
+\usepackage{amsmath,amssymb,amsfonts}
+
+\title{Maximum Flow}
+\author{Malte Stær Nissen}
+
+\begin{document}
+\maketitle
+
+\section{Notes}
+\begin{itemize}
+    \item[\textbf{Flow:}]{ A flow is a function $f : V \times V \rightarrow \mathbb{R}, u,v \in V$
+        statisfies: capacity constraint and flow conservation}
+    \item[\textbf{Capacity constraint:}]{
+        For all $u,v \in V$, we require: $0 \leq f(u,v) \leq c(u,v)$}
+    \item[\textbf{Flow conservation:}]{
+        For all $u \in V - \{s, t\}: \sum_{v \in V} f(v,u) = \sum_{v \in V} f(u,v)$}
+    \item[\textbf{Residual network:}]{Same as the original but with edges going back and forth telling how much we can add/``subtract`` to/from each edge}
+    \item[\textbf{Augmenting path:}]{Path from source to sink having a least minimum capacity 1}
+    \item[\textbf{Cancellation:}]{When you move flow in opposite direction of the paths}
+    \item[\textbf{Cut:}]{A partition of $V$ into two sets $S$ and $T$ where $s \in S$ and $t \in T$}
+    \item[\textbf{Net flow:}]{Total flow over a cut: $f(S,T) = \sum_{u \in S} \sum_{v \in T}  f(u,v) - \sum_{u \in S} \sum_{v \in T} f(v,u)$}
+    \item[\textbf{Capacity of cut:}]{$c(S,T) = \sum_{u \in S} \sum_{v \in T} c(u,v)$}
+    \item[\textbf{Minimum cut:}]{Cut of minimum capacity over all cuts of the network}
+    \item[\textbf{Ford-Fulkerson:}]{Search for augmenting path: $O(V+E') = O(E)$ (ie. depth-first search.
+
+        If capacities are integral, there can be as many as $|f^\ast|$ iterations and hence: $O(E |f^\ast|)$}
+    \item[\textbf{Edmunds-Karp algorithm}]{Same as Ford-Fulkerson but always choosing the shortest augmenting path (each path unitweight) / breadth-first search. Runningtime: $O(VE^2)$}
+    \item[\textbf{Max-Flow min-cut}]{1 => 2. Contradiction, 2 => 3 Get the right cut, 3 => 1 Simple lemma 26.?}
+    \item[\textbf{$c_f(p)$}]{$c_f(p) = \min \{ c_f(u,v) : (u,v) ~\text{is on}~p \}$}
+\end{itemize}
+
+\section{Agenda for exam}
+\begin{enumerate}
+    \item Definition
+    \item Algorithm
+    \item Cut, $|f| \leq c(S,T)$
+    \item Proof of Max Flow-Min Cut
+    \item Time complexity (Lemma 1, Lemma 2)
+\end{enumerate}
+
+\end{document}
+
