@@ -20,3 +20,11 @@ $4$ if they have degree $4$. Now, the newly constructed vertices in
 $G'$ representing vertices in $G$, are connected bidirectionally to
 the vertices representing faces in $G$ for which they appear in the
 boundary cycle. These edges are assigned capacities $1$ and cost $0$.
+
+For two faces $a,b$ in $G$ and their corresponding vertices in $G'$
+$v_a, v_b$, the flow of the edge going from the vertex $v_a$ to the
+vertex $v_b$ represents to $z_{ba}$.
+
+For a vertex $v_a$ in $G'$ representing face $a$ in $G$ and a vertex
+$v'$ in $G'$ representing a vertex $v$ in $G$, the difference between
+the flow going from $v'$ to $v_a$ represents $x_{vf}$.
