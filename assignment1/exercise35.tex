@@ -3,8 +3,20 @@
 \subsection{}
 
 We want to translate the different properties of the rectilinear graph
-into a minimum-cost-flow problem. Unfortunately we have not had the
-time to complete this exercise, and though we have somewhat of an idea
-of how to do it, we also have some questions with regards to the
-exercise, which we'll probably seek to ask about during next weeks
-tutorial classes.
+$G = (V, E)$ into a graph $G'$ representing a minimum-cost-flow
+problem. For simplicity we'll allow bidirectional edges; they can
+easily be eliminated by introducing an intermediate vertex, so this
+shouldn't be a problem.
+
+To do this, each face in $G$ is translated into a vertex in the
+minimum-cost-flow problem with demand $-4$ if the face is external and
+$4$ otherwise. Vertices in $G'$ representing faces that share edges in
+$G$ are connected bidirectionally to each other with edges that have $cost = 1,
+capacity = \infty $.
+
+Vertices in $G$ are also added to $G'$ as vertices with demand $0$ if
+they have degree $2$, demand $2$ if they have degree $3$, and demand
+$4$ if they have degree $4$. Now, the newly constructed vertices in
+$G'$ representing vertices in $G$, are connected bidirectionally to
+the vertices representing faces in $G$ for which they appear in the
+boundary cycle. These edges are assigned capacities $1$ and cost $0$.
