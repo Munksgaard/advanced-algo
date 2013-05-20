@@ -1,5 +1,22 @@
 \subsection{}
 
-Let $G = (V,E)$ be a complete undirected weigthed graph. Find the
-shortest simple cycle $c$ in $G$, such that for all $v \in V$, $v \in
-c$ or there exists a vertex $v' \in c$ such that $d_{v'v} \leq d$.
+Let $G = (V,E)$ be a complete undirected weigthed graph, $d$ be the
+cost function $V \times V \to \mathbb{Z}$, and a non-negative integer
+$k$. Find the shortest cycle $c$ in $G$, such that for all $v \in V$,
+$v \in c$ or there exists a vertex $v' \in c$ such that $d_{v'v} \leq
+k$.
+
+The decision problem can be formulated as such: Given a complete
+undirected weighted graph $G=(V,E)$ with weight function $d ~ : ~ V
+\times V \to \mathbb{Z}$, and a non-negative integer $k$, does there
+exist a cycle $c$ in $G$ with total weight $w$ such that $w \leq k$,
+and that for all $v \in V$, $v \in c$ or there exists a vertex $v' \in
+c$ such that $d_{v'v} \leq k$.
+
+\begin{align*}
+  TCP = \{ \langle G, d, k\rangle : ~ & G = (V,E) ~ \text{is a complete
+    undirected graph}, \\
+  & d ~ \text{is a function from} ~ V \times V \to \mathbb{Z}, \\
+  & k \in \mathbb{Z} \textrm{, and} \\
+  & G ~\text{has a traveling-couples tour with cost at most} ~ k\} .\\
+\end{align*}
