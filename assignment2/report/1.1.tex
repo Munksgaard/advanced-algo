@@ -1,22 +1,53 @@
 \subsection{}
 
-Let $G = (V,E)$ be a complete undirected weigthed graph, $d$ be the
+Let $G = (V,E)$ be a complete undirected weigthed graph, $c$ be the
 cost function $V \times V \to \mathbb{Z}$, and a non-negative integer
-$k$. Find the shortest cycle $c$ in $G$, such that for all $v \in V$,
-$v \in c$ or there exists a vertex $v' \in c$ such that $d_{v'v} \leq
-k$.
+$d$. Find the shortest cycle $\sigma$ in $G$, such that for all $v \in
+V$, $v \in \sigma$ or there exists a vertex $v' \in \sigma$ such that
+$c_{v'v} \leq k$.
 
 The decision problem can be formulated as such: Given a complete
-undirected weighted graph $G=(V,E)$ with weight function $d ~ : ~ V
-\times V \to \mathbb{Z}$, and a non-negative integer $k$, does there
-exist a cycle $c$ in $G$ with total weight $w$ such that $w \leq k$,
-and that for all $v \in V$, $v \in c$ or there exists a vertex $v' \in
-c$ such that $d_{v'v} \leq k$.
+undirected weighted graph $G=(V,E)$ with weight function $c ~ : ~ V
+\times V \to \mathbb{Z}$, and non-negative integers $d,k$, does there
+exist a cycle $\sigma$ in $G$ with total weight $w$ such that $w \leq
+k$, and that for all $v \in V$, $v \in \sigma$ or there exists a
+vertex $v' \in \sigma$ such that $c_{v'v} \leq k$.
 
 \begin{align*}
-  TCP = \{ \langle G, d, k\rangle : ~ & G = (V,E) ~ \text{is a complete
+  TCP = \{ \langle G, c, d, k \rangle : ~ & G = (V,E) ~ \text{is a complete
     undirected graph}, \\
-  & d ~ \text{is a function from} ~ V \times V \to \mathbb{Z}, \\
+  & c ~ \text{is a function from} ~ V \times V \to \mathbb{Z}, \\
+  & d \in \mathbb{Z}, \\ 
   & k \in \mathbb{Z} \textrm{, and} \\
   & G ~\text{has a traveling-couples tour with cost at most} ~ k\} .\\
 \end{align*}
+
+We will now show that $\text{HAM-CYCLE} \leq_p \text{TCP}$.
+
+Let $G = (V,E)$ be an instance of HAM-CYCLE. We construct an instance
+of TCP as follows. We form the complete graph $G' = (V,E')$, where $E'
+= \{(i,j)~:~i,j\in V ~ \text{and}~ i \neq j \}$, and we define the
+cost function $c$ by
+
+\begin{align*}
+  c(i,j) = \begin{cases} & 0 ~ \text{if} ~ (i, j) \in E~ , \\
+    & 1 ~ \text{if} (i, j) \notin E~.\end{cases}\\
+\end{align*}
+
+The instance of TCP is then $\langle G', c, 0, 0 \rangle$., which we
+can easily create in polynomial time.
+
+We now show that graph $G$ has a hamiltonian cycle if and only if
+graph $G'$ has a tour of cost at most $0$. Suppose that graph $G$ has
+a hamiltonian cycle $h$. Each edge in $h$ belongs to $E$ and thus has
+cost $0$ in $G'$. Since we've set $d=0$, we also have that two
+vertices $v1, v2$ where $v1 \neq v2$ never satifies $c_{v1v2} \leq d$,
+which means that all vertices in $h$ are also in $V$. Thus, $h$ is a
+tour in $G'$ with cost $0$. Conversely, suppose that graph $G'$ has a
+tour $h'$ of cost at most $0$. Since the cost of the edges in $E'$ are
+$0$ and $1$, the cost of tour $h'$ is exactly $0$ and each edge on the
+tour must have cost 0. And since the cost of the edges in $E$ are $0$,
+we can completely ignore $d$. Therefore, $h'$ contains only edges in
+$E$.
+
+Thus the time complexity of $TCP$ is $k^n$ for some constant $k$.
