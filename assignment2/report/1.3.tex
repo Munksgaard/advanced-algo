@@ -1,5 +1,14 @@
 \subsection{ILP lower bound}
-
 \begin{align}
     v(i) = \{j \in J | d_{ij} \leq d\}
 \end{align}
+
+\begin{align*}
+    \min             & \sum_{i,j, i \not= j x_{ij} c_{ij} & \\
+    \text{subject to}& &\\
+                     & x_{ij} \in \setN{0,1}, &\hspace{2em} i,j \in E\\
+                     & \sum_{j \in v(i)} \sum_{i = 1}^n x_{kj}          &\geq 1, \hspace{2em} i = 1,\hdots,n \\
+                     & \sum_{j = 0}^n x_{ij} + x_{ji}                   &\leq 2, \hspace{2em} i = 1,\hdots,n \\
+                     & \sum_{j = 0}^n x_{ij} - x_{ji}                   &= 0, \hspace{2em} i = 1,\hdots,n \\
+                     & \sum_{i \in S} \sum_{j \in V \setminus S} x_{ij} &= 2, \hspace{2em} \forall S \subset V,~ V = \setN{i,j | x_{ij} = 1}
+\end{align*}
