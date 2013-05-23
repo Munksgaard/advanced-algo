@@ -1,14 +1,36 @@
 \subsection{ILP lower bound}
+
+We first need to define a function, given a vertex, that returns all vertices
+in the vicinity of the argument vertex, where the vicinity distance is
+\texttt{d}:
+
 \begin{align}
     v(i) = \{j \in J | d_{ij} \leq d\}
 \end{align}
+We then define and express the TCP instance as a integer linear programming
+problem instance.
 
 \begin{align*}
-    \min             & \sum_{i,j, i \not= j x_{ij} c_{ij} & \\
+    \min             & \sum_{i,j, i \not= j} x_{ij} c_{ij} & \\
     \text{subject to}& &\\
-                     & x_{ij} \in \setN{0,1}, &\hspace{2em} i,j \in E\\
-                     & \sum_{j \in v(i)} \sum_{i = 1}^n x_{kj}          &\geq 1, \hspace{2em} i = 1,\hdots,n \\
+                     & x_{ij} \in \setN{0,1}, &\hspace{2em} i,j \in V\\
+                     & \sum_{j \in v(i)} \sum_{k = 1}^n x_{kj}          &\geq 1, \hspace{2em} i = 1,\hdots,n \\
                      & \sum_{j = 0}^n x_{ij} + x_{ji}                   &\leq 2, \hspace{2em} i = 1,\hdots,n \\
                      & \sum_{j = 0}^n x_{ij} - x_{ji}                   &= 0, \hspace{2em} i = 1,\hdots,n \\
                      & \sum_{i \in S} \sum_{j \in V \setminus S} x_{ij} &= 2, \hspace{2em} \forall S \subset V,~ V = \setN{i,j | x_{ij} = 1}
 \end{align*}
+The first constraint makes sure that vertices, in the vicinity of vertex
+\texttt{i}, can be seen from a vertex on the solution path.
+
+The second and third constraint guarantee that the degree of all combinations
+of vertices is below two - so we can never have two circles intersecting or
+otherwise have edges with more than on ingoing and one outgoing edge. The
+third constraint specifically specifies that either the vertices have one in-
+and outgoing edge, or they have none.
+
+The fourth constraint takes care of potential sub tours in the solution
+circle. We basically make a cut of all the vertices that contains in-and
+outgoing edges, and then check that for any possible cut that the number of
+edges intersecting the cut, is exactly equal to two. That way, we make sure
+the integer linear programming problem solver doesn't end up with multiple
+circles.
