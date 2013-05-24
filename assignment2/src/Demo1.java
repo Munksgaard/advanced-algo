@@ -6,6 +6,7 @@ public class Demo1 {
     try {
       // Create a problem with 4 variables and 0 constraints
       LpSolve solver = LpSolve.makeLp(0, 4);
+      solver.setDebug(false);
 
       // add constraints
       solver.strAddConstraint("3 2 2 1", LpSolve.LE, 4);
