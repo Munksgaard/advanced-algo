@@ -41,7 +41,9 @@ import lpsolve.*;
             totalNodes+=initialNodes.size();
             nodePool.addAll(initialNodes);
 
-            // Initialize index mapping of edges
+            /* Initialize index mapping of edges
+             * so we have it when calculating the lower bound
+             */
             this.createMapIndex(this.problem.n * (this.problem.n-1) / 2);
 
             while(!nodePool.isEmpty()){
@@ -140,93 +142,103 @@ import lpsolve.*;
 
 	/** Returns a lower bound for the path corresponding to n. */
 	private double lowerbound(BnBNode n){
-        int n = this.problem.n;
-        int e = n * (n-1) / 2;
+        try {
+            /* Get number of vertices
+             * and compute number of edges e
+             */
+            int v = this.problem.n;
+            int e = v * (v-1);
 
-        /* Set all variables to binary */
-        LpSolve solver = LpSolve.makeLp(3*n, e);
+            /* Set all variables to binary */
+            LpSolve solver = LpSolve.makeLp(3*v, e);
 
-        for (int i = 0; i <= e; i++) {
-            solver.setBinary(i, true);
-        }
+            /*
+             * Problem relaxed to use reals instead of integers
+             * and hence these lines should be out-commented
+            for (int i = 0; i <= e; i++) {
+                solver.setBinary(i, true);
+            }*/
 
-        double[][] constr1 = new double[n][e];
-        for (int i = 0; i < n; i++) {
-            int[] vic = this.problem.getVicinity();
+            /* Constraint 1 - not completed */
+            double[][] constr1 = new double[v][e];
+            for (int i = 0; i < v; i++) {
+                // Populate constraint for a given i = 1,...,n
+                // Get vicinity of edge
+                // int[] vic = this.problem.getVicinity(edge);
 
 
-            for (int j = 0; j < i; j++) {
-                if (i == j) continue;
+                for (int j = 0; j < i; j++) {
+                    if (i == j) continue;
 
-                this.problem.
+                }
+
+                solver.addConstraint(constr1[i], LpSolve.GE, 1);
             }
 
-            solver.addConstraint(constr1[i], LpSolve.GE, 1);
-        }
+            /* Constraint 2 */
+            double[][] constr2 = new double[v][e];
+            for (int i = 0; i < v; i++) {
+                // Populate constraint for a given i = 1,...,v
+                for (int j = 0; j < v; j++) {
+                    constr2[i][j] = isEdge(j,i) ? 1 : 0;
+                }
 
-        double[][] constr2 = new double[e];
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                constr2[i][j] = isEdge(j,i) ? 1 : 0;
+                solver.addConstraint(constr2[i], LpSolve.LE, 2);
             }
 
-            solver.addConstraint(constr2[i], LpSolve.LE, 2);
-        }
+            /* Constraint 3 - unfortunately not doable with
+             * current setup otherwise very similar to constraint 2 */
+            double[][] constr3 = new double[v][e];
 
 
-        double[] constr3 = new double[e];
+            /* Find cost coefficients c */
+            double[] c = new double[e+1];
 
+            c[0] = 0; // Index 0 ignored by lp solve
 
-        /* Find cost coefficients c */
-        double[] c = new double[e];
-        Edge[][] edges = this.problem.getEdges();
-        int x = 0;
-        for(int i = 0; i < n; j++) {
-            for(int j = i; j < n; j++) {
-                c[x] = edges[i][j].length;
-                x++;
+            Edge[][] edges = this.problem.getEdges();
+            int x = 1;
+            for(int i = 1; i <= e; i++) {
+                for(int j = 1; j <= e; j++) {
+                    if (i == j) continue;
+                    c[x] = edges[i][j<i?j:j-1].length;
+                    x++;
+                }
             }
+
+            /* Run through current BnB node and parents and set the corresponding
+             * LP variables to their respective values (not done) */
+            int[] already = this.getVerticesInNode(n);
+            int[] colno = new int[1];
+            double[] row = new double[] {1};
+
+            for (int i = 1; i < already.length; i++) {
+                // Add equality constraint
+                colno[0] = getIndex(already(i-1), already(i), e / 2 - 1);
+                solver.addConstraintex(1, row, colno, LpSolve.EQ, 1);
+            }
+
+            /* Set objective function to minimize and set coefficients */
+            solver.setMinim();
+            solver.setObjFn(c);
+
+            /* Solve ILP and return final objective function value */
+            solver.setVerbose(0);
+            solver.solve();
+
+            return solver.getObjective();
+
+        } catch (Exception e) {
+            return 0;
         }
-
-        /* Set objective function to minimize and set coefficients */
-        solver.setMinim();
-        solver.setObjFn(c);
-
-        /* Solve ILP and return final objective function value */
-        solver.solve();
-
-        return solver.getObjective();
-
-
-//		double pathLength = 0;
-//		BnBNode p = n;
-//		while(true){
-//			pathLength += p.edge.length;
-//			if(p.parent==null) break;
-//			p=p.parent;
-//		}
-//
-//		Point2D.Double start = problem.vertices[p.edge.v0];
-//		Point2D.Double end = problem.vertices[n.edge.v1];
-//
-//		return pathLength + end.distance(start);
-//		return 0;
 	}
 
-    private void createMapIndex(int e) {
-        this.mapIndex = new int[e][2];
-        int n = this.problem.n;
-
-        int counter = 0;
-        for (int i = 0; i < n; i++) {
-            for (int j = i+1; j < n; j++) {
-                this.mapIndex[counter][0] = i;
-                this.mapIndex[counter][1] = j;
-                counter++;
-            }
-        }
+    /** Map index (i,j) to k */
+    private int getIndex(int i, int j, int width) {
+        return i * width + j;
     }
 
+    /** Check if position k in ILP column corresponds to an edge to or from vertice ind  */
     private boolean isEdge(int ind, int k) {
         int[] val = this.mapIndex[ind];
         return val[0] == k || val[1] == k;
