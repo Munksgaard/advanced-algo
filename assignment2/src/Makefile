@@ -3,11 +3,11 @@
 all : build run
 
 build :
-	javac -cp . -Xlint *.java
+	javac -cp lpsolve55j.jar:. -Xlint *.java
 
 run :
-	java -ea -cp . BnB
+	java -ea -cp lpsolve55j.jar:. BnB
 
 clean :
-	rm -f *.class *.jar
+	rm -f *.class
 

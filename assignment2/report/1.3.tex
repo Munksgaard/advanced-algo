@@ -17,7 +17,7 @@ problem instance.
                      & \sum_{j=0,i\neq j}^{n} x_{ij} + \sum_{j \in v(i)} \sum_{k = 1, i \neq k}^n x_{kj}          &\geq 1, \hspace{2em} i = 1,\hdots,n \\
                      & \sum_{j = 0}^n x_{ij} + x_{ji}                   &\leq 2, \hspace{2em} i = 1,\hdots,n \\
                      & \sum_{j = 0}^n x_{ij} - x_{ji}                   &= 0, \hspace{2em} i = 1,\hdots,n \\
-                     & \sum_{i \in S} \sum_{j \in V \setminus S} x_{ij} &= 2, \hspace{2em} \forall S \subset V,~ V = \setN{i,j | x_{ij} = 1}
+                     & \sum_{i \in S} \sum_{j \in V \setminus S} x_{ij} &\geq 2, \hspace{2em} \forall S \subset V,~ V = \setN{i,j | x_{ij} = 1}
 \end{align*}
 The first constraint makes sure that vertices, in the vicinity of vertex
 \texttt{i}, can be seen from a vertex on the solution path.
