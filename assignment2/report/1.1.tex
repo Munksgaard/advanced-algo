@@ -22,6 +22,25 @@ vertex $v' \in \sigma$ such that $c_{v'v} \leq k$.
   & G ~\text{has a traveling-couples tour with cost at most} ~ k\} .\\
 \end{align*}
 
+To show that TCP is in the class of NP-complete problems, we first show that
+TCP is in NP. We do this by constructing an algorithm that verifies whether a
+given certificate decides the problem:\\
+
+Given an instance of the TCP problem and an ordered certificate T, we check
+that the following three cases holds:
+
+\begin{enumerate}
+  \item {For all $v \in V\backslash T$: Check that $\exists u \in T$, such
+  that $c(v,u) \leq d$.}
+  \item {$\sum_{\{u,v\} \in T} c(u,v) \leq k$.}
+  \item {T contains only one duplicate, namely $T(1) = T(last)$.}
+\end{enumerate}
+
+Clearly all of the above cases can be solved in polynomial time. If just
+one of these cases are unsatisfied, the algorithm outputs \texttt{False},
+otherwise \texttt{True}. So we have shown that TCP lies in the class of NP
+problems.\\
+
 We will now show that $\text{HAM-CYCLE} \leq_p \text{TCP}$.
 
 Let $G = (V,E)$ be an instance of HAM-CYCLE. We construct an instance
