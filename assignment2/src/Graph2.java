@@ -13,14 +13,14 @@ import java.awt.geom.Point2D.Double;
 public class Graph2 extends TCPProblem{
 
 	private final static Point2D.Double[] points = {
-		new Point2D.Double(0,0),
-		new Point2D.Double(1,0),
-		new Point2D.Double(0,1),
-		new Point2D.Double(1,1),
-		new Point2D.Double(0,2),
-		new Point2D.Double(1,2),
-		new Point2D.Double(0,3),
-		new Point2D.Double(1,3)
+		new Point2D.Double(0,0), // 
+		new Point2D.Double(1,0), // 
+		new Point2D.Double(0,1), // 
+		new Point2D.Double(1,1), //  6 7
+		new Point2D.Double(0,2), //  4 5
+		new Point2D.Double(1,2), //  2 3
+		new Point2D.Double(0,3), //  0 1
+		new Point2D.Double(1,3)  // 
 	};
 
 	public Double[] getPoints() {

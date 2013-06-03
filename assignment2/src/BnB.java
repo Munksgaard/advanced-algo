@@ -17,7 +17,6 @@ import lpsolve.*;
     public class BnB {
         private BnBNode optimal;
         private final TCPProblem problem;
-        private int[][] mapIndex;
 
         /** Constructs a solution to the TCPProblem */
         public BnB(TCPProblem problem){
@@ -40,11 +39,6 @@ import lpsolve.*;
             List<BnBNode> initialNodes = generateInitialNodes(0);
             totalNodes+=initialNodes.size();
             nodePool.addAll(initialNodes);
-
-            /* Initialize index mapping of edges
-             * so we have it when calculating the lower bound
-             */
-            this.createMapIndex(this.problem.n * (this.problem.n-1) / 2);
 
             while(!nodePool.isEmpty()){
                 BnBNode n = nodePool.pollFirst(); //Remove the most promising path from the node-pool
@@ -150,98 +144,143 @@ import lpsolve.*;
             int e = v * (v-1);
 
             /* Set all variables to binary */
-            LpSolve solver = LpSolve.makeLp(3*v, e);
+            LpSolve solver = LpSolve.makeLp(0, e);
 
             /*
              * Problem relaxed to use reals instead of integers
              * and hence these lines should be out-commented
-            for (int i = 0; i <= e; i++) {
+             */
+            for (int i = 1; i <= e; i++) {
                 solver.setBinary(i, true);
-            }*/
+            }
 
-            /* Constraint 1 - not completed */
-            double[][] constr1 = new double[v][e];
+
+            /* Constraint 1 - vicinities */
             for (int i = 0; i < v; i++) {
+                double[] constr1 = new double[e+1];
                 // Populate constraint for a given i = 1,...,n
                 // Get vicinity of edge
-                // int[] vic = this.problem.getVicinity(edge);
+                int[] vic = this.problem.getVicinity(i);
 
-
-                for (int j = 0; j < i; j++) {
-                    if (i == j) continue;
-
-                }
-
-                solver.addConstraint(constr1[i], LpSolve.GE, 1);
-            }
-
-            /* Constraint 2 */
-            double[][] constr2 = new double[v][e];
-            for (int i = 0; i < v; i++) {
-                // Populate constraint for a given i = 1,...,v
                 for (int j = 0; j < v; j++) {
-                    constr2[i][j] = isEdge(j,i) ? 1 : 0;
+                    if (i == j) continue;
+                    int col = getIndex(i, j);
+                    constr1[col] = 1;
                 }
-
-                solver.addConstraint(constr2[i], LpSolve.LE, 2);
+                for (int j = 0; j < vic.length; j++) {
+                    if (i == vic[j]) continue;
+                    for (int k = 0; k < v; k++) {
+                        if (vic[j] == k) continue;
+                        int col = getIndex(vic[j], k);
+                        constr1[col] = 1;
+                    }
+                }
+                solver.addConstraint(constr1, LpSolve.GE, 1);
             }
 
-            /* Constraint 3 - unfortunately not doable with
-             * current setup otherwise very similar to constraint 2 */
-            double[][] constr3 = new double[v][e];
+            /* Constraint 2 and 3 */
+            for (int i = 0; i < v; i++) {
+                double[] constr2 = new double[e+1];
+                double[] constr3 = new double[e+1];
 
+                // Populate constraint for a given i = 1,...,v
+                // By going through all i,j and j,i where i != j
+                for (int j = 0; j < v; j++) {
+                    if (j == i) continue;
+                    int t  = getIndex(i, j);
+                    int t2 = getIndex(j, i);
+                    // Set constants for constraint 2
+                    constr2[t] = 1;
+                    constr2[t2] = 1;
 
-            /* Find cost coefficients c */
-            double[] c = new double[e+1];
-
-            c[0] = 0; // Index 0 ignored by lp solve
-
-            Edge[][] edges = this.problem.getEdges();
-            int x = 1;
-            for(int i = 1; i <= e; i++) {
-                for(int j = 1; j <= e; j++) {
-                    if (i == j) continue;
-                    c[x] = edges[i][j<i?j:j-1].length;
-                    x++;
+                    // Set constants for constraint 3
+                    constr3[t] = 1;
+                    constr3[t2] = -1;
                 }
+
+                solver.addConstraint(constr2, LpSolve.LE, 2);
+                solver.addConstraint(constr3, LpSolve.EQ, 0);
             }
 
             /* Run through current BnB node and parents and set the corresponding
              * LP variables to their respective values (not done) */
-            int[] already = this.getVerticesInNode(n);
-            int[] colno = new int[1];
-            double[] row = new double[] {1};
-
-            for (int i = 1; i < already.length; i++) {
+            BnBNode nt = n;
+            while (nt.parent != null) {
                 // Add equality constraint
-                colno[0] = getIndex(already(i-1), already(i), e / 2 - 1);
+                int i = nt.edge.v1;
+                int j = nt.edge.v0;
+
+                int[] colno = new int[]{getIndex(i, j)};
+                double[] row = new double[]{1};
                 solver.addConstraintex(1, row, colno, LpSolve.EQ, 1);
+                nt = nt.parent;
+            }
+
+            /* Find cost coefficients c */
+            double[] cost = new double[e+1];
+            Edge[][] edges = this.problem.getEdges();
+            for(int i = 0; i < v; i++) {
+                for(int j = 0; j < v; j++) {
+                    if (i == j) continue;
+                    int col = getIndex(i, j);
+                    cost[col] = edges[i][j<i?j:j-1].length;
+                }
             }
 
             /* Set objective function to minimize and set coefficients */
+            solver.setObjFn(cost);
             solver.setMinim();
-            solver.setObjFn(c);
 
             /* Solve ILP and return final objective function value */
             solver.setVerbose(0);
             solver.solve();
-
+            if (solver.getObjective() == 4) {
+                double[] solution = solver.getPtrVariables();
+                System.out.println("Optimal tour:");
+                System.out.println("Pre-defined:");
+                nt = n;
+                while(nt.parent != null) {
+                    int i = nt.edge.v0;
+                    int j = nt.edge.v1;
+                    System.out.printf("%d %d\n", i,j);
+                    nt = nt.parent;
+                }
+                System.out.println("Solution:");
+                for (int i = 1; i < solution.length; i++) {
+                    if (solution[i] == 1) {
+                        System.out.println(Arrays.toString(invIndex(i)));
+                    }
+                }
+            }
             return solver.getObjective();
 
         } catch (Exception e) {
+            e.printStackTrace();
             return 0;
         }
 	}
 
     /** Map index (i,j) to k */
-    private int getIndex(int i, int j, int width) {
-        return i * width + j;
+    private int getIndex(int i, int j) {
+        return this.getIndex(i,j, this.problem.n-1);
     }
 
-    /** Check if position k in ILP column corresponds to an edge to or from vertice ind  */
-    private boolean isEdge(int ind, int k) {
-        int[] val = this.mapIndex[ind];
-        return val[0] == k || val[1] == k;
+    private int getIndex(int i, int j, int width) {
+        int index = i * width + (j<i?j:j-1)+1;
+        if (index == 0) {
+            System.out.println("Zero index!");
+        }
+        return index;
+    }
+
+    private int[] invIndex(int ind) {
+        return this.invIndex(ind, this.problem.n-1);
+    }
+    private int[] invIndex(int ind, int width) {
+        int i = ind / width;
+        int j = ind - i * width;
+        j = j<i?j:j+1;
+        return new int[]{i,j};
     }
 
 
@@ -256,7 +295,7 @@ import lpsolve.*;
 		int[] ret = new int[c];
 
 		c=0;
-		p = optimal;
+  		p = optimal;
 		ret[c++] = p.edge.v1;
 		while(p!=null){
 
@@ -273,7 +312,7 @@ import lpsolve.*;
 
 
 	public static void main(String[] args) {
-		TCPProblem problem = new Graph1();
+		TCPProblem problem = new Graph2();
 		BnB solver = new BnB(problem);
 		int[] optTour = solver.getOptimalSolution();
 		System.out.println(Arrays.toString(optTour));
