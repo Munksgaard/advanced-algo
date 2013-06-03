@@ -160,13 +160,21 @@ import lpsolve.*;
                 double[] constr1 = new double[e+1];
                 // Populate constraint for a given i = 1,...,n
                 // Get vicinity of edge
+                for (int j = 0; j < v; j++) {
+                     if (i == j) continue;
+                     int col = getIndex(i, j);
+                     constr1[col] = 1;
+                }
+
                 int[] vic = this.problem.getVicinity(i);
-
                 for (int j : vic) {
-
+                    if (j == i) continue;
                     for (int k = 0; k < v; k++) {
                         if (j == k) continue;
+                        if (i == k) continue;
                         int col = getIndex(k, j);
+                        constr1[col] = 1;
+                        col = getIndex(j, k);
                         constr1[col] = 1;
                     }
                 }
@@ -185,14 +193,13 @@ import lpsolve.*;
                     int t  = getIndex(i, j);
                     int t2 = getIndex(j, i);
                     // Set constants for constraint 2
-                    constr2[t] = 1;
+                    constr2[t]  = 1;
                     constr2[t2] = 1;
 
                     // Set constants for constraint 3
-                    constr3[t] = 1;
+                    constr3[t]  = 1;
                     constr3[t2] = -1;
                 }
-
                 solver.addConstraint(constr2, LpSolve.LE, 2);
                 solver.addConstraint(constr3, LpSolve.EQ, 0);
             }
@@ -200,7 +207,7 @@ import lpsolve.*;
             /* Run through current BnB node and parents and set the corresponding
              * LP variables to their respective values (not done) */
             BnBNode nt = n;
-            while (nt.parent != null) {
+            while (nt != null) {
                 // Add equality constraint
                 int i = nt.edge.v0;
                 int j = nt.edge.v1;
@@ -229,12 +236,14 @@ import lpsolve.*;
             /* Solve ILP and return final objective function value */
             solver.setVerbose(0);
             solver.solve();
-            if (solver.getObjective() == 4) {
+
+            if (solver.getObjective() < 4) {
+                System.out.println(solver.getObjective());
                 double[] solution = solver.getPtrVariables();
                 System.out.println("Optimal tour:");
                 System.out.println("Pre-defined:");
                 nt = n;
-                while(nt.parent != null) {
+                while(nt != null) {
                     int i = nt.edge.v0;
                     int j = nt.edge.v1;
                     System.out.printf("%d %d\n", i,j);
@@ -242,10 +251,11 @@ import lpsolve.*;
                 }
                 System.out.println("Solution:");
                 for (int i = 1; i < solution.length; i++) {
-                    if (solution[i] > 0) {
+                    if (solution[i] != 0) {
                         System.out.println(Arrays.toString(invIndex(i)));
                     }
                 }
+                System.out.println(Arrays.toString(solution));
             }
             return solver.getObjective();
 
@@ -307,7 +317,7 @@ import lpsolve.*;
 
 
 	public static void main(String[] args) {
-		TCPProblem problem = new Graph2();
+		TCPProblem problem = new Graph1();
 		BnB solver = new BnB(problem);
 		int[] optTour = solver.getOptimalSolution();
 		System.out.println(Arrays.toString(optTour));
