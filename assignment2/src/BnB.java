@@ -150,35 +150,30 @@ import lpsolve.*;
              * Problem relaxed to use reals instead of integers
              * and hence these lines should be out-commented
              */
+            /*
             for (int i = 1; i <= e; i++) {
                 solver.setBinary(i, true);
             }
-
+            */
 
             /* Constraint 1 - vicinities */
             for (int i = 0; i < v; i++) {
                 double[] constr1 = new double[e+1];
                 // Populate constraint for a given i = 1,...,n
-                // Get vicinity of edge
-                for (int j = 0; j < v; j++) {
-                     if (i == j) continue;
-                     int col = getIndex(i, j);
-                     constr1[col] = 1;
-                }
-
+                // Get vicinity of vertex i, v(i)
                 int[] vic = this.problem.getVicinity(i);
+
+                // Check if any nodes in v(i) are visited (sum x_ij +x_ji >= 2)
                 for (int j : vic) {
-                    if (j == i) continue;
                     for (int k = 0; k < v; k++) {
                         if (j == k) continue;
-                        if (i == k) continue;
                         int col = getIndex(k, j);
                         constr1[col] = 1;
                         col = getIndex(j, k);
                         constr1[col] = 1;
                     }
                 }
-                solver.addConstraint(constr1, LpSolve.GE, 1);
+                solver.addConstraint(constr1, LpSolve.GE, 2);
             }
 
             /* Constraint 2 and 3 */
@@ -208,7 +203,7 @@ import lpsolve.*;
              * LP variables to their respective values (not done) */
             BnBNode nt = n;
             while (nt != null) {
-                // Add equality constraint
+                // Add equality constraint for visited nodes
                 int i = nt.edge.v0;
                 int j = nt.edge.v1;
 
@@ -218,7 +213,7 @@ import lpsolve.*;
                 nt = nt.parent;
             }
 
-            /* Find cost coefficients c */
+            /* Find cost coefficients c by looking up length of edges */
             double[] cost = new double[e+1];
             Edge[][] edges = this.problem.getEdges();
             for(int i = 0; i < v; i++) {
@@ -237,26 +232,6 @@ import lpsolve.*;
             solver.setVerbose(0);
             solver.solve();
 
-            if (solver.getObjective() < 4) {
-                System.out.println(solver.getObjective());
-                double[] solution = solver.getPtrVariables();
-                System.out.println("Optimal tour:");
-                System.out.println("Pre-defined:");
-                nt = n;
-                while(nt != null) {
-                    int i = nt.edge.v0;
-                    int j = nt.edge.v1;
-                    System.out.printf("%d %d\n", i,j);
-                    nt = nt.parent;
-                }
-                System.out.println("Solution:");
-                for (int i = 1; i < solution.length; i++) {
-                    if (solution[i] != 0) {
-                        System.out.println(Arrays.toString(invIndex(i)));
-                    }
-                }
-                System.out.println(Arrays.toString(solution));
-            }
             return solver.getObjective();
 
         } catch (Exception e) {
@@ -270,24 +245,11 @@ import lpsolve.*;
         return this.getIndex(i,j, this.problem.n-1);
     }
 
+    /** Map index of x_ij to position in row
+     * The row doesn't contain x_ii */
     private int getIndex(int i, int j, int width) {
-        int index = i * width + (j<i?j:j-1)+1;
-        if (index == 0) {
-            System.out.println("Zero index!");
-        }
-        return index;
+        return i * width + (j<i?j:j-1)+1;
     }
-
-    private int[] invIndex(int ind) {
-        return this.invIndex(ind, this.problem.n-1);
-    }
-    private int[] invIndex(int ind, int width) {
-        int i = ind / width;
-        int j = ind - i * width;
-        j = j<i?j:j+1;
-        return new int[]{i,j};
-    }
-
 
 	/** Return an array with all the vertices visited in the specified path */
 	private int[] getVerticesInNode(BnBNode n){
@@ -303,6 +265,7 @@ import lpsolve.*;
   		p = optimal;
 		ret[c++] = p.edge.v1;
 		while(p!=null){
+
 
 			ret[c++] = p.edge.v0;
 			p = p.parent;
@@ -320,7 +283,19 @@ import lpsolve.*;
 		TCPProblem problem = new Graph1();
 		BnB solver = new BnB(problem);
 		int[] optTour = solver.getOptimalSolution();
+        System.out.println("Graph 1:");
 		System.out.println(Arrays.toString(optTour));
+        problem = new Graph2();
+        solver = new BnB(problem);
+        optTour = solver.getOptimalSolution();
+        System.out.println("Graph 2:");
+		System.out.println(Arrays.toString(optTour));
+        problem = new Graph3();
+        solver = new BnB(problem);
+        optTour = solver.getOptimalSolution();
+        System.out.println("Graph 3:");
+		System.out.println(Arrays.toString(optTour));
+
 	}
 
 }
