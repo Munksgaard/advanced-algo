@@ -169,9 +169,10 @@ import lpsolve.*;
                 }
                 for (int j = 0; j < vic.length; j++) {
                     if (i == vic[j]) continue;
+
                     for (int k = 0; k < v; k++) {
                         if (vic[j] == k) continue;
-                        int col = getIndex(vic[j], k);
+                        int col = getIndex(k, vic[j]);
                         constr1[col] = 1;
                     }
                 }
@@ -207,8 +208,8 @@ import lpsolve.*;
             BnBNode nt = n;
             while (nt.parent != null) {
                 // Add equality constraint
-                int i = nt.edge.v1;
-                int j = nt.edge.v0;
+                int i = nt.edge.v0;
+                int j = nt.edge.v1;
 
                 int[] colno = new int[]{getIndex(i, j)};
                 double[] row = new double[]{1};
@@ -247,7 +248,7 @@ import lpsolve.*;
                 }
                 System.out.println("Solution:");
                 for (int i = 1; i < solution.length; i++) {
-                    if (solution[i] == 1) {
+                    if (solution[i] > 0) {
                         System.out.println(Arrays.toString(invIndex(i)));
                     }
                 }
