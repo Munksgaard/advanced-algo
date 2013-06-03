@@ -162,17 +162,11 @@ import lpsolve.*;
                 // Get vicinity of edge
                 int[] vic = this.problem.getVicinity(i);
 
-                for (int j = 0; j < v; j++) {
-                    if (i == j) continue;
-                    int col = getIndex(i, j);
-                    constr1[col] = 1;
-                }
-                for (int j = 0; j < vic.length; j++) {
-                    if (i == vic[j]) continue;
+                for (int j : vic) {
 
                     for (int k = 0; k < v; k++) {
-                        if (vic[j] == k) continue;
-                        int col = getIndex(k, vic[j]);
+                        if (j == k) continue;
+                        int col = getIndex(k, j);
                         constr1[col] = 1;
                     }
                 }
