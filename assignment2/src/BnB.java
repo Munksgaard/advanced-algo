@@ -150,11 +150,9 @@ import lpsolve.*;
              * Problem relaxed to use reals instead of integers
              * and hence these lines should be out-commented
              */
-            /*
             for (int i = 1; i <= e; i++) {
                 solver.setBinary(i, true);
             }
-            */
 
             /* Constraint 1 - vicinities */
             for (int i = 0; i < v; i++) {

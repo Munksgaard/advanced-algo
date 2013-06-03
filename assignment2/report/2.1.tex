@@ -1,42 +1,35 @@
 \subsection{Implementation}
-We have chosen to remove the no-subtour constraint. This is possible since we
-are implementing a lower bound by using a minimization ILP. Removing the
-constraint of not having subtours simply add extra elements to the set of
+We have chosen to remove the no-subtour constraint. This is possible since
+we are implementing a lower bound by using a minimization ILP. Removing the
+constraint of not having subtours simply adds extra elements to the set of
 feasible solutions. If some subtour has a higher cost, it will not affect
 the outcome of the ILP since we are minimizing and hence ``skipping'' that
-particular subtour. There could however be solutions with subtours having
-a lower cost, but this would only lower the lower bound and hence not
-falsely eliminating branches with possible optimal solutions. The removal
-of the subtour constraint will likely lead to a higher amount of
-branching, but we gain a simpler implementation and a simpler ILP to
-solve.
+particular subtour. There could however be solutions with subtours having a
+lower cost, but this would only lower the lower bound and hence not falsely
+eliminate branches with possible optimal solutions. The removal of the subtour
+constraint will likely lead to a higher amount of branching, but we gain a
+simpler implementation and a simpler ILP to solve.
 
 Likewise we choose to relax the problem from having integer values of our
-representation (in fact binary values) to having real valued variables
-between 0 and 1. This relaxation will inevitably give us less tight bounds
-than for integer problems but the problem will be easier to solve since
-integer problems are much harder to solve than real valued problems in
-general.
+representation (in fact binary values) to having real valued variables between
+0 and 1. This relaxation will inevitably give us less tight bounds than
+for integer problems but the problem will be easier to solve since integer
+problems are much harder to solve than real valued problems in general.
 
-We have not succeeded in implementing the lower bound fully. This was
-caused by an early design decision of only having each edge represented once,
-which we found out late in the developing process was a mistake since we
-had no way of guaranteeing that each vertex had exactly degree 0 or 2.
+We have implementing the lower bound fully, which consists of our first three
+constraints; namely the vicinity and the two vertex degree constraints. To
+do this, we have made a \texttt{getIndex} method, that takes in two integers
+corresponding to the two vertices and returns the mapped index to a row, which
+does not contain edges to itself, so $x_{ii}$ is not contained in the row.
 
-Instead we should have had each edge represented twice and hence given two
-vertices $i$ and $j$, $i \not= j$ we would have $x_{ij}$ and $x_{ji}$,
-which makes it possible to model the constraint described above.
+Our vicinity constraint has been implemented by iterating through all
+vertices, from which we check if each of the nodes' vicinity $v(i)$ is visited
+- this can be done, by checking if $\sum_{j \in v(i)} \sum_{k=0}^n x_{jk} +
+x_{kj} >= 2$.
 
-Using this new design decision we could also implement the constraints
-directly from the equations above with a bit of fiddling with the exact
-indexing implementation.
+For the two degree constraints, we simply iterate over all vertices and
+then over all vertices again, such that $i \ne j$, we then simply get the
+indices for the edge $\{i,j\}$ and $\{j,i\}$ and set them each to $1$ for the
+second constraint. For the third constraint, we do the same, only setting the
+$\{j,i\}$ edge to $-1$, to get the minus relation.\\
 
-In case we get a re-submission of the assignment we would like to have
-pointers/feedback on our intended implementation instead of the one
-supplied in the code.
-
-Note: We have made sure the code is actually compiling and is executeable.
-The executing requires lp-solve 5.5 to be installed. To execute the code
-simply unzip the attached archive and execute \texttt{make} in a terminal.
-Otherwise simply compile and run the java program with the classpath
-attribute \texttt{-cp lpsolve55j.jar:.}.
