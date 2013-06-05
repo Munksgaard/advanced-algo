@@ -1,5 +1,21 @@
 \subsection{Tour lengths of problems}
 
-As described in the subsection above we haven't implemented our intended
-lower bound yet and hence we have no result to present in this
-question.
+We encountered an error in our implementation that resulted in the first
+graph giving a wrong solution (though not farm apart from the right one). The
+implementation works perfectly on the second and third example graphs though.
+The results are gathered and can be found in the table below.
+
+\begin{figure}[H]
+  \centering
+  \begin{tabular}{|c|c|c|c|}
+    \hline
+    \textbf{Graph} & \textbf{\# evaluations} & \textbf{Tour taken} & \textbf{Length}\\
+    \hline
+    1 & 18524 & 8, 7, 5, 6 & $4.9962$ \\
+    \hline
+    2 & 56    & 3, 5, 4, 2 & $4.0000$ \\
+    \hline
+    3 & 32    & 2, 4, 6, 7, 5, 3, 1, 0 & $8.0000$ \\
+    \hline
+  \end{tabular}
+\end{figure}
