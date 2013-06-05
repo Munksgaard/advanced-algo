@@ -1,0 +1,430 @@
+\documentclass[a4paper]{article}
+
+%Packages
+\usepackage[english]{babel}
+\usepackage[ansinew]{inputenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{cancel}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[stable]{footmisc}
+\usepackage{lastpage}
+\usepackage{ulem}
+\usepackage{listings}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{clrscode3e}
+\usepackage{multirow}
+\usepackage{hyperref}
+
+%Listings
+\definecolor{listingShade}{RGB}{245,245,245}
+\lstset{ %
+%language=PHP, %LANGUAGE HERE! :D
+basicstyle=\ttfamily,
+numbers=left,
+numberstyle=\ttfamily\footnotesize,
+stepnumber=1,
+numbersep=5pt,
+backgroundcolor=\color{listingShade},
+showspaces=false,
+showstringspaces=false,
+showtabs=false,
+frame=tb,
+tabsize=8,
+captionpos=b,
+breaklines=true,
+breakatwhitespace=false,
+title=\lstname
+}
+
+%Theorems
+\theoremstyle{definition}
+\newtheorem{thm}{Theorem}[section]
+\theoremstyle{definition}
+\newtheorem{lem}{Lemma}[section]
+%\theoremstyle{definition}
+%\newtheorem{defi}{Definition}%[section]
+
+%Math sets
+\newcommand{\N}{\mathbb N} %the natural numbers
+\newcommand{\Z}{\mathbb Z} %the integers
+\newcommand{\Q}{\mathbb Q} %the rational numbers
+\newcommand{\R}{\mathbb R} %the real numbers
+\newcommand{\C}{\mathbb C} %the complex numbers
+
+%Other commands
+\newcommand{\ul}{\underline}
+\newcommand{\ol}{\overline}
+\newcommand{\mono}[1]{{\ttfamily#1}}
+
+%Title stuff
+\title{Advanced algorithms\\Linear Programming Notes}
+\author{Søren Dahlgaard}
+
+\begin{document}
+
+\maketitle
+
+\section{Disposition}
+\begin{enumerate}
+\item What is a linear program?
+\item Standard and slack forms
+\item Pivoting
+\item Simplex algorithm. Pivot until we're done.
+\item Simplex terminates. A slack form is determined by $B$ (or $N$). Finite
+    amount. Cycling can be avoided
+\item Dual and primal. Weak duality
+\item Intuition that optimal solutions will be equal.
+\item Initial slack form.
+\end{enumerate}
+
+
+\section{Summary}
+
+A linear program is where we want to maximize/minimize some linear function:
+
+\[
+\text{maximize } \sum_{j=1}^n c_jx_j
+\]
+
+subject to a set of linear constraints
+
+\[
+\text{subject to } \sum_{j=1}^m a_{ij}x_j \le b_i \quad i = 1..m
+\]
+
+We can also have $\ge$ or $=$.
+
+\section{Standard and slack forms}
+A linear program in standard form requires that all variables be positive
+and all linear constraints be ``less than or equal''. That is:
+
+\[
+\text{max. } \sum_{j=1}^n c_jx_j
+\]
+\begin{align}
+\text{st. } \sum_{j=1}^n a_{ij}x_j &\le b_i \quad \text{for } i = 1..m \\
+x_j &\ge 0 \quad \text{for } j=1..n
+\end{align}
+
+We can write these as matrices: $A = (a_{ij})$ an $m\times n$ matrix.
+$b = (b_i)$, $c = (c_j)$ and $x = (x_j)$. respectively $m$-vector and two
+$n$-vectors. Then we want to maximize $c^Tx$ subject to $Ax\le b$ and $x\ge 0$.
+
+We call a solution $\ol{x}$ feasible if it satisfies all constraints. An
+optimal solution is a solution $\ol{x}$ which has maximum objective value
+$c^T\ol{x}$ over all feasible solutions. Some linear programs may be unbounded.
+
+To convert a linear program into standard form do the following:
+\begin{enumerate}
+\item To convert minimization to maximization, just multiply $c$ by $-1$.
+\item For each variable $x_j$ without nonnegativity constraint. Replace it
+    with $x_j' - x_j''$. We can set $x_j', x_j'' \ge 0$
+\item Equality constraints can be replaced by two inequality constraints.
+\item $\ge$ constraints can be replaced by $\le$ by multiplying with $-1$.
+\end{enumerate}
+
+\subsection{Slack form}
+In slack form we want to replace all inequality constraints with equality
+constraints, so we introduce variables
+
+\[x_{n+i} = b_i - \sum_{j=1}^n a_{ij}x_j\]
+\[x_{n+i} \ge 0\]
+
+If these two equations hold then clearly the inequalities from the standard
+form holds - and vice versa. We call this variable a slack variable because it
+indicates how much slack there is between the left and right-hand side.
+
+Example:
+
+\begin{align}
+z   &=     2x_1 - 3x_2 + 3x_3 \\
+x_4 &=  7  - x_1 - x_2  + x_3 \\
+x_5 &=  -7 + x_1 + x_2  - x_3 \\
+x_6 &=  4  - x_1 + 2x_2 - 2x_3
+\end{align}
+
+We call the variables on the left-hand side of the equations
+for the basic variables and denote their indices by the set $B$. The
+variables on the right-hand side are called nobasic variables, denoted $N$.
+This gives:
+
+\begin{align}
+z   &= v   + \sum_{j\in N}c_jx_j \\
+x_i &= b_i - \sum_{j\in N}a_{ij}x_j \quad \text{for } i \in B
+\end{align}
+
+In the example we have:
+
+\[B = \{1,2,3\}\]
+\[N = \{4,5,6\}\]
+\[A = \begin{pmatrix} -1 & -1 &  1 \\
+                       1 &  1 & -1 \\
+                      -1 &  2 & -2 \end{pmatrix}\]
+\[b = \begin{pmatrix} 7 & -7 & 4 \end{pmatrix}^T\]
+\[c = \begin{pmatrix} 2 & -3 & 3 \end{pmatrix}^T\]
+\[v = 0\]
+
+
+\section{SIMPLEX}
+
+The idea is to rewrite the program every step until we have rewritten it in
+a way such that the optimal solution is easy to obtain.
+
+Simplex starts by converting the linear program into slack form. There are
+a couple of concepts to simplex.
+
+\begin{description}
+\item [Pivoting] From one slack form we pick an ``entering variable''. This is
+    picked at random from the nonbasic variables. It must have $c_j > 0$. Let
+    this variable be $x_e, e\in N \land c_e > 0$. As we increase this variable
+    the values of $x_j, j\in B$ might either increase, decrease or stay the
+    same. If no $x_j$ decreases it is clear that we can increase $x_e$
+    infinitely and the objective function is unbounded.
+
+    We cannot allow any $x_j$ to become negative, as the solution won't be
+    feasible then. We therefore pick the $i\in B$ that minimizes $b_i/a_{ie}$.
+    We call this the leaving variable $l$. We now look at the constraint
+\[
+x_l = b_l - \sum_{j\in N}a{lj}x_j
+\]
+    and we exchange the roles of $x_l$ and $x_e$ which gives us:
+\[
+x_e = b_l/a_{le} - \sum_{j\in N + \{l\} - \{e\}} a_{lj}/a_{le}x_j
+\]
+    We then replace $x_e$ in all other $x_i, i\in B$ with this new expression.
+
+    Finally we change the objection value $v = v + c_eb_e = v + b_l/a{le}$
+\end{description}
+
+In order to show that simplex returns either ``unbounded'' or a feasible
+solution we use the following invariant:
+
+\begin{enumerate}
+\item The slack form is equivalent to the initial slack form
+\item All $b_i\ge 0$
+\item The basic solution is feasible
+\end{enumerate}
+
+\begin{description}
+\item [Initialization:]
+    \begin{enumerate}
+    \item They are the same
+    \item The assumption is that the initial is feasible, so this must be true.
+    \item Is true because of (2).
+    \end{enumerate}
+\item [Maintenance:]
+    We assume that there is a bounded variable $x_e$
+    \begin{enumerate}
+    \item Can be shown with simple linear algebra.
+    \item Clearly $b_e = b_l/a_{le}$ is positive. We also know that
+        $b_i/a_{ie} \ge b_l/a_{le}$. And that the new $b_i = b_i - a_{ie}b_e$.
+        This clearly gives $b_i\ge 0$ (because $a_{le} > 0$).
+    \item (2) causes this to be true because all $x_j, j\in N$ are $0$ and all
+        $b_i, i\in B$ are $\ge 0$.
+    \end{enumerate}
+    The case where a variable is unbounded causes the algorithm to terminate.
+\item [Termination:]
+    If the algorithm terminates because there is no positive coef. in the
+    objective function we have from maintenance that the solution is feasible.
+
+    If we find an unbounded variable, we want to show that
+\[
+\ol{x}_i =
+\begin{cases}
+\infty                             & \text{if } i = e \\
+0                                  & \text{if } i\in N - \{e\} \\
+b_i - \sum_{j\in N} a_{ij}\ol{x}_j & \text{if } i\in B
+\end{cases}
+\]
+    We know that all $b_i\ge 0$. We also know that all $x_i$ in $N$ are
+    nonnegative. We need to see that $x_i = b_i - a_{ie}x_e$ is nonnegative.
+    Because $a_{ie} \le 0$ (Other wise it would be bounding for $x_e$) this is
+    okay.
+
+    This gives an objective value of $\infty$.
+\end{description}
+
+We now need to show that Simplex terminates, and that the returned solution is
+optimal. We also need to show how to find an initial solution.
+
+\subsection{Termination}
+There is a problem. No pivoting will decrease the objective value, but it
+might not increase. See example:
+
+\[z = 8 + x_3 - x_4\]
+\[x_1 = 8 - x_2 - x_4\]
+\[x_5 = x_2 - x_3\]
+
+We have to pick $x_3$ as $x_e$ and $x_5$ as $x_l$ which gives no increase in
+pivot value. This also means that SIMPLEX can cycle.
+
+First let's show that $N$ and $B$ uniquely define the slack form. We use that
+if we have
+\[\sum_{j\in I}\alpha_jx_j = \gamma + \sum_{j\in I}\beta_jx_j\]
+for any setting of $x_j$'s. Then $\gamma = 0$ and $\alpha_j = \beta_j$. This
+is easy to show (set $x_j = 0$ then $\gamma = 0$ and so on...)
+
+For any standard form $(A, b, c)$ and a set of basic variables $B$ the slack
+form is uniquely defined.
+
+\begin{proof}
+Assume two different slack forms have the same basic/nonbasic variables.
+
+Because all slack forms are equivalent we can subtract the two forms from each
+other, giving:
+
+\[
+0 = (b_i - b_i') - \sum_{j\in N}(a_{ij} - a_{ij}')x_j\quad \text{for } i\in B
+\]
+or
+\[
+\sum_{j\in N}a_{ij}x_j = (b_i - b_i') + \sum_{j\in N}a_{ij}'x_j
+\]
+We know that this makes the form equivalent. Same goes for the objective
+function.
+\end{proof}
+
+This means that SIMPLEX will always terminate unless it cycles. Because we
+can only chose $m$ basic variables out of the $n+m$ variables in $n+m C m$
+ways simplex will return in that amount of iterations unless it cycles. We
+can make it not cycle by always picking the entering variable with lowest
+index (bland's rule).
+
+
+\section{Duality}
+We want to show that simplex returns an \textit{optimal} solution.
+
+Given a primal linear program in standard form we create the dual linear
+program:
+
+\[\text{min. } \sum_{i=1}^m b_iy_i\]
+\[\text{s.t. } \sum_{i=1}^m a_{ij}y_i \ge c_j \quad \text{for } j = 1..n\]
+\[y_i\ge 0 \quad \text{for } i = 1..n\]
+
+If we have feasible solutions $\ol{x}, \ol{y}$ we have:
+
+\[\sum_{j=1}^n c_j\ol{x}_j \le \sum_{i=1}^m b_i\ol{y}_i\]
+
+\begin{proof}
+\begin{align}
+\sum_{j=1}^nc_j\ol{x}_j &\le
+    \sum_{j=1}^n\left(\sum_{i=1}^m a_{ij}\ol{y}_i\right)\ol{x}_j \\
+    &= \sum_{i=1}^m\left(\sum_{j=1}^n a_{ij}\ol{x}_j\right)\ol{y}_i \\
+    &\le \sum_{i=1}^m b_i\ol{y}_i
+\end{align}
+\end{proof}
+
+From this it is clear, that if the objective value of the primal and dual
+are the same, then they are optimal.
+
+If we have a slack form returned by simplex of the primal:
+\[z = v' + \sum_{j\in N}c_j'x_j\]
+\[x_i = b_i' - \sum_{j\in N}a_{ij}'x_j \quad \text{for }i\in B\]
+
+we can produce an optimal dual solution by setting
+
+\[
+\ol{y}_i =
+\begin{cases}
+-c'_{n+i} & \text{if } (n+i)\in N \\
+0 & \text{otherwise}
+\end{cases}
+\]
+
+If SIMPLEX returns $\ol{x}$ and the last slack form $N, B, c$. Let $\ol{y}$ be
+defined as stated above. Then the $\ol{x}$ is optimal for the primal and
+$\ol{y}$ is optimal for the dual.
+
+Because all $c'_j\le 0, j\in N$ in the last slack form, if we set
+$c'_j =0, j\in B$. We can write:
+
+\begin{align}
+z &= v' + \sum_{j\in N}c'_jx_j \\
+  &= v' + \sum_{j = 1}^{m+n} c'_jx_j
+\end{align}
+
+Because all $x_j = 0, j\in N$ in the basic solution we have that $z = v'$.
+
+Because of the equality of slack forms we have
+\[\sum_{j=1}^nc_jx_j = v' + \sum_{j=1}^{n+m}c'_jx_j\]
+(Note that $c'_j = 0, j\in B$).
+We therefor have:
+
+\begin{align}
+\sum_{j=1}^nc_j\ol{x}_j &= v' + \sum_{j=1}^{n+m}c'_j\ol{x}_j \\
+&= v' + \sum_{j=1}^nc'_j\ol{x}_j + \sum_{i=1}^m c'_{n+i}\ol{x}_{n_i} \\
+\end{align}
+
+We can replace $c'_{n+i}$ with $-\ol{y}_i$. And $\ol{x}_{n+i}$ are the slack
+variables, so these can be replaced with their formula in the original slack:
+
+\[
+= v' + \sum_{j=1}^nc'_j\ol{x}_j + \sum_{i=1}^m (-y_i)\left(b_i - \sum_{j=1}^n a_{ij}\ol{x}_j\right)
+\]
+
+Regrouping gives us
+
+\[
+= v' + \sum_{j=1}^nc'_j\ol{x}_j - \sum_{i=1}^m b_i\ol{y}_i +
+    \sum_{j=1}^n\sum_{i=1}^m (a_{ij}\ol{y}_i)\ol{x}_j
+\]
+
+We then get
+
+\[
+\sum_{j=1}^n c_j\ol{x}_j = \left(v' - \sum_{i=1}^m b_i\ol{y}_i\right)
+    + \sum_{j=1}^n\left(c'_j + \sum_{i=1}^m a_{ij}\ol{y}_i\right)\ol{x}_j
+\]
+
+This is of the form we proved earlier, so we have
+
+\[v' - \sum_{i=1}^mb_i\ol{y}_i = 0\]
+\[c'_j + \sum_{i=1}^ma_{ij}\ol{y}_i = c_j \quad \text{for } j = 1..n\]
+
+The first of these two give that $v' = \sum_{i=1}^m b_i\ol{y}_i$, so the
+objective values of the primal and dual are the same. We now only to show,
+that $\ol{y}$ is feasible.
+
+Because $c'_j\le 0$ (or simplex would continue). From the equations above we
+have
+
+\[c_j = c'_j + \sum_{i=1}^m a_{ij}\ol{y}_i \le \sum_{i=1}^m a_{ij}\ol{y_i}\]
+
+We therefore have that the feasible solution returned by SIMPLEX is optimal.
+
+
+\section{Finding the initial slack form}
+The idea is to create a new linear program $L_{\text{aux}}$:
+
+\[\text{maximize } -x_0\]
+\begin{align*}
+\text{subject to } \sum_{j=1}^n a_{ij}x_j - x_0 &\le b_i \\
+x_j &\ge 0
+\end{align*}
+
+This has objective value $0$ if and only if $L$ is feasible.
+
+\begin{proof}
+$\Rightarrow$: If $\ol{X}$ is feasible solution to $L$, then we can set $x_0=0$
+and all the constraints are satisfied. This will give $z=0$, but this is
+obviously optimal.
+
+$\Leftarrow$: If $x_0 = 0$ then the remaining values make up a solution to $L$.
+\end{proof}
+
+The idea is, that we can perform one pivot with $x_0$ as the leaving
+variable to get a feasible solution to $L_{\text{aux}}$. Then we can use
+SIMPLEX to get the optimal solution. If it's objective value is $0$, we're
+good.
+
+\begin{proof}
+If we perform a pivot with $0$ entering and $i$ such that $b_i$ is minimal
+leaving, then the base solution is feasible. This is true becaus $x_0$ has
+the same coefficient in alle the constraints, so picking the minimum $b_i$
+is enough.
+
+Simplex does the rest.
+\end{proof}
+
+\end{document}

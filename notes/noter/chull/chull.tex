@@ -1,0 +1,260 @@
+\documentclass[a4paper]{article}
+
+%Packages
+\usepackage[english]{babel}
+\usepackage[ansinew]{inputenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{cancel}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[stable]{footmisc}
+\usepackage{lastpage}
+\usepackage{ulem}
+\usepackage{listings}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{clrscode3e}
+\usepackage{multirow}
+\usepackage{hyperref}
+
+%Listings
+\definecolor{listingShade}{RGB}{245,245,245}
+\lstset{ %
+%language=PHP, %LANGUAGE HERE! :D
+basicstyle=\ttfamily,
+numbers=left,
+numberstyle=\ttfamily\footnotesize,
+stepnumber=1,
+numbersep=5pt,
+backgroundcolor=\color{listingShade},
+showspaces=false,
+showstringspaces=false,
+showtabs=false,
+frame=tb,
+tabsize=8,
+captionpos=b,
+breaklines=true,
+breakatwhitespace=false,
+title=\lstname
+}
+
+%Theorems
+\theoremstyle{definition}
+\newtheorem{thm}{Theorem}[section]
+\theoremstyle{definition}
+\newtheorem{lem}{Lemma}[section]
+%\theoremstyle{definition}
+%\newtheorem{defi}{Definition}%[section]
+
+%Math sets
+\newcommand{\N}{\mathbb N} %the natural numbers
+\newcommand{\Z}{\mathbb Z} %the integers
+\newcommand{\Q}{\mathbb Q} %the rational numbers
+\newcommand{\R}{\mathbb R} %the real numbers
+\newcommand{\C}{\mathbb C} %the complex numbers
+
+%Other commands
+\newcommand{\ul}{\underline}
+\newcommand{\ol}{\overline}
+\newcommand{\mono}[1]{{\ttfamily#1}}
+
+%Title stuff
+\title{Advanced algorithms\\Convex Hull Notes}
+\author{Søren Dahlgaard}
+
+\begin{document}
+
+\maketitle
+
+\section{Disposition}
+\begin{enumerate}
+\item Convex hull? Minimum convex set.
+\item Graham's Scan + Jarvis march, general idea
+\item Lower bound with sorting + intuition it's wrong.
+\item Marriage before conquest
+\begin{enumerate}
+\item Upper/lower identical.
+\item General procedure: median, bridge, recurse.
+\item Finding the bridge. Intuition of slope and removing
+\item Time complexity
+\end{enumerate}
+\item Chan's algorithm
+\begin{enumerate}
+\item Idea. Merge graham and jarvis.
+\item Make incremental guesses at $h$ and stop if we're wrong.
+\item Time complexity.
+\end{enumerate}
+\end{enumerate}
+
+\section{Convex hull}
+Given a set $P$ of points in the plane $E^2$ (or space $E^3$ and more, but we
+will only look at the 2D example) we want to find the smallest convex set
+$C\subseteq P$ such that every point in $P$ is in $C$. We can see it as having
+a board with nails and wrapping a rubber band around it.
+
+A convex set is a set such that if we pick any point $a,b$ in it, then the line
+from $a$ to $b$ also lies entirely within the set. Or more exactly. For any
+$t$ in the interval $[0..1]$ we must have
+\[(1-t)x + ty\]
+is in the set.
+
+We require that $|P|\ge 3$. For most of the algorithm we will also require that
+no three points are colinear and that no points have the same $x$ or $y$
+coordinates. These are reasonable assumptions for the continuous world. They
+just add a lot of special cases which is normal with computational geometry.
+
+\subsection{Graham's scan}
+The idea is to start with a point $p_0$ that has to be in $\text{CH}(P)$.
+We then iterate through the points of $P$ in order of their polar angle
+with respect to $p_0$. We know that $p_1$ and $p_m$ must also be in $C$.
+We keep the current ``convex hull'' in a stack $S$ and for each $p_i$ we do:
+
+\begin{enumerate}
+\item While $p_i$ does not make a left turn with the two top poins of $S$ we
+    pop the top element.
+\item Add $p_i$ to $S$.
+\end{enumerate}
+
+This clearly runs in $O(n\lg n)$ because we sort the points and then each point
+is at most pushed and popped once.
+
+Correctness can be shown with the following invariant:
+
+\textit{At the start of the $i$th iteration, $S$ contains
+$\text{CH}(\{p_0,p_1,\ldots,p_{i-1}\})$ in sorted order.}
+
+\subsection{Jarvis March}
+Jarvis's March uses ``gift wrapping''. Again we pick a point that has to be in
+the hull (the bottom-most, left-most point). We then act like taking some gift
+paper and stretch it all the way to the right. We then start going up until it
+touches another point. In other words, we pick the point $p_i$ that maximizes
+the angle $\angle p_{i-2}p_{i-1}p_i$. This can easily be implemented in
+$O(nh)$.
+
+To optimize this we might split the run into two. We continue wrapping until we
+reach $p_k$ with the maximum $y$-value. Then we have constructed the
+right-chain (assuming no identical $y$-values). Do the opposite for the
+left-chain.
+
+
+\subsection{Lower bound}
+Some people suggested that $n\lg n$ might be a lower bound because we could
+otherwise use it to sort $n$ numbers by finding the convex hull of
+$(a_i, a_i^2)$ for all these $n$ points. While this is true, we can still
+make algorithms in time $O(nh)$ like Jarvis' March, where $h$ can be less
+that $\lg n$, surely. Note that in the sorting case we have $h=n$, therefore
+we might believe that it can be done in $O(n\lg h)$, which we provide to
+algorithms for below.
+
+
+\subsection{Marriage-before-conquest}
+Marriage-Before-Conquest is actually a modification of divide-and-conquer.
+Before solving the subproblems recursively we look at how they will combine
+in the end and remove a bunch of the problem (in this case points) based on
+this.
+
+The idea is to compute the top of the hull and the bottom of the hull
+seperately. We can combine this in constant time adding at most two vertical
+edges (if the left/rightmost points have different $y$-values).
+
+The algorithm runs as follows:
+
+\begin{enumerate}
+\item Find the median $x$-value of the points and create the line
+    $L = \{(x,y) : x = m\}$, where $m$ is the median $x$-value.
+\item Find the part, $b$, of the top hull crossing this line. (The bridge).
+\item Delete all points under $b$.
+\item Recursively solve $P_l$ and $P_r$ the points left and right of the
+    bridge.
+\end{enumerate}
+
+The hard part here is to find the bridge. We use the following idea: A
+supporting line is a non-vertical straight line that contains at least one
+point of $P$ such that no other points of $P$ are above the line.
+
+We use a couple of lemmas:
+
+\textit{Let $p,q\in P$. If $x(p) = x(q)$ and $y(p) < y(q)$ then obviously
+$p$ cannot be a bridge point.}
+
+\textit{Let $x(p) < x(q)$. If the slope $s_{pq} > s_b$ then $p$ cannot be a   
+bridge point.} proof: Then $q$ would be above the bridge supporting line,     
+which is a contradiction. The reverse case $s_{pq} < s_b$ implies that $q$    
+isn't a bridge point.                                                         
+
+\textit{Let $h$ be a supporting line. $s_h < s_b$ iff $h$ only contains points
+to the right of $L$. $s_h = s_b$ iff $h$ has a point on either side.}
+
+We now find the bridge like so:
+\begin{enumerate}
+\item Split $P$ into $|P|/2$ pairs of points.
+\item Find the median slope of the $|P|/2$ line segments.
+\item Translate the slope to make a supporting line (can be done in $O(|P|)$).
+\item If this line $h$ only contains points right of $L$ we have $s_h < s_b$
+    and thus all of the $|P|/2$ lines $pq$ with slope $s_{pq} < s_h < s_b$ can
+    not have $q$ as bridge points. This will eliminat $|P|/4$ points because we
+    chose the median slope.
+\item Do this recursively.
+\end{enumerate}
+
+The running time of the bridge function is:
+\[T(n) = T(3n/4) + O(n) = O(n)\]
+This gives a total running time of:
+\[
+T(n,h) = \max_{h_l+h_r = h} \{ T(n/2, h_l) + T(n/2, h_r)\} + O(n)
+\]
+Because we have at most $n/$ points to the left of the median and $n/2$ points
+to the right. The base case here is $T(n,h) = O(n)$ when $h = 2$. This gives us
+that the worst case of the above recursion is when $h_l = h_r = h/2$. We can
+show that $T(n,h) = n\log h$ using the substitution method:
+
+\begin{align}
+T(n,h) &\le \max_{h_l + h_r = h}
+    \left\{c\frac{n}{2}\log h_l + c\frac{n}{2}\log h_r\right\} + O(n) \\
+       &=   \max_{h_l+h_r=h}\{\log(h_lh_r)\} + O(n) + c\frac{n}{2} \\
+       &\le O(n) + c\frac{n}{2} \log(h/2)^2 \\
+       &=   n\log h
+\end{align}
+
+
+\subsection{Chan's algorithm}
+The big problem about the marriage-before-conquest algorithm is that
+it relies on finding the median in linear time. This is very costly in
+practice thus we strive to find a better algorithm.\\\\
+
+The idea of Chan's algorithm is to preprocess the points and splitting them
+into $n/m$ convex hulls which we compute with graham's scan in
+$n/m \cdot m\lg m = n\lg m$. If $m=h$ this is obviously $n\lg h$.
+
+With this preprocessing we can do a modified version of jarvis' march.
+Finding the point $p_i$ that maximizes $\angle p_{i-2}p_{i-1}p_i$ can now
+be done in $O(n/m\lg m)$ by finding the point for each of the convex hull
+with binary search and taking the best among these. This gives a total
+running time of:
+
+\[
+T(n) = O(n/m\cdot m\lg m + h((n/m)\lg m)) = O(n\lg m + h((n/m)\lg m) =
+    O(n(1 + h/m)\lg m)
+\]
+
+Now, if we pick $m = h$ this will be $O(n\lg h)$ like the mbc algorithm. If
+we pick $m$ too large it will approach $n(1 + 0)\lg n$, and if we pick it
+too low it will approach $O(n(1+h)\lg 1)$. The idea is thus to make a
+increasing guesses at $h$ (our guess is $H$) and $m$ (which we want to be $h$).
+If the algorithm doesn't calculate a hull in $H$ steps we have guessed too low
+and we stop it before it runs for too long. Thus we make guesses:
+
+\[(2^{2^1}, 2^{2^2}, 2^{2^3}, \ldots)\]
+until $2^{2^t} \ge h$. We set $m=H=2^{2^t}$. Thus the $t$th iteration takes
+\[
+T(n) = O(n(1 + H/H)\lg H) = O(n/lg H) = O(n2^t)
+\]
+Thus the total running time is:
+\begin{align}
+T(n) &= \sum_{t=1}^{\lceil \lg \lg h\rceil} O(n2^t) \\
+     &= O(n2^{\lceil \lg \lg h \rceil + 1}) \\
+     &= O(n\lg h)
+\end{align}
+
+We might improve this algorithm by picking a better $m$ or $H$ value, removing
+the points found to be inside $C_i$ when we run graham's scan or more ways.
+\end{document}
